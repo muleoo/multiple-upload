@@ -71,10 +71,34 @@ var _base2 = _interopRequireDefault(_base);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// export function getFilename () {
+//   base62.setCharacterSet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz');
+//   let code = String(Date.now() / 7173 + Math.random(0, 1) * 17779);
+//   return code.substr(0, 8);
+// }
+
+// 综合多个随机因子，尽可能减少碰撞概率
+// 生成一个8位的唯一文件名
 function getFilename() {
   _base2.default.setCharacterSet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz');
-  var code = String(Date.now() / 7173 + Math.random(0, 1) * 17779);
-  return code.substr(0, 8);
+
+  // 获取高精度时间戳
+  var timestamp = Date.now();
+
+  // 生成两个独立的随机数
+  var randomPart1 = Math.floor(Math.random() * 10000);
+  var randomPart2 = Math.floor(Math.random() * 10000);
+
+  // 使用performance.now()作为额外熵源（如果可用）
+  var performanceTime = window.performance && window.performance.now ? Math.floor(window.performance.now() * 100) % 1000 : Math.floor(Math.random() * 1000);
+
+  // 综合多个随机源
+  var uniqueNumber = (timestamp % 10000000 + randomPart1 % 1000 + randomPart2 % 100 + performanceTime) % 90000000; // 最大值设为90000000而不是100000000
+
+  // 加上10000000确保第一位不是0（范围变为10000000-99999999）
+  uniqueNumber += 10000000;
+
+  return uniqueNumber.toString();
 }
 
 },{"base62":6}],4:[function(_dereq_,module,exports){
@@ -333,7 +357,6 @@ var Upload = function () {
         nextId = Number(e.currentTarget.getResponseHeader('x-upyun-next-part-id'));
 
         _this2._emitProgress(_this2._offset, _this2._size);
-        //this._offset = offset;
         if (nextId == -1) return _this2._complete();
 
         _this2._startUpload(nextId);
@@ -395,11 +418,7 @@ var Upload = function () {
           return;
         }
 
-        // this._emitProgress(offset, this._size);
-        // this._emitChunkComplete(offset - this._offset, offset, this._size);
-
         _this3._offset = offset;
-        console.log(offset, _this3._size);
         if (offset == _this3._size) {
           // Yay, finally done :)
           _this3._emitSuccess();
