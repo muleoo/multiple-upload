@@ -83,6 +83,10 @@ var Upload = function () {
 
     // The uuid is upyun return id for multiple upload
     this._uuid = null;
+
+    // 兼容腾讯cos上传的逻辑，后续不再使用此bao
+    this._cosUploadId = null;
+    this._parts = [];
   }
 
   _createClass(Upload, [{
@@ -178,6 +182,7 @@ var Upload = function () {
         }
         var nextId = Number(e.currentTarget.getResponseHeader('x-upyun-next-part-id'));
         _this._uuid = e.currentTarget.getResponseHeader('x-upyun-multi-uuid');
+        _this._cosUploadId = e.currentTarget.getResponseHeader('x-cos-upload-id');
         _this._offset = 0;
         _this._startUpload(nextId);
       };
@@ -212,6 +217,15 @@ var Upload = function () {
         }
         nextId = Number(e.currentTarget.getResponseHeader('x-upyun-next-part-id'));
 
+        // 如果有cos返回的etag ，则存起来，等complete时用到
+        var cosEtag = e.currentTarget.getResponseHeader('x-cos-part-etag');
+        if (cosEtag) {
+          _this2._parts.push({
+            PartNumber: nextId, // COS的分片编号从1开始
+            ETag: cosEtag
+          });
+        }
+
         _this2._emitProgress(_this2._offset, _this2._size);
         if (nextId == -1) return _this2._complete();
 
@@ -233,6 +247,7 @@ var Upload = function () {
       xhr.setRequestHeader("x-upyun-multi-uuid", this._uuid);
       xhr.setRequestHeader("x-upyun-part-id", String(nextId));
       xhr.setRequestHeader("X-Upyun-Multi-Stage", "upload");
+      xhr.setRequestHeader("x-cos-upload-id", this._cosUploadId);
       var start = this._offset;
       var end = this._offset + this.options.chunkSize;
 
@@ -297,7 +312,11 @@ var Upload = function () {
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       xhr.setRequestHeader("X-Upyun-Multi-Stage", "complete");
       xhr.setRequestHeader("x-upyun-multi-uuid", this._uuid);
+      xhr.setRequestHeader("x-cos-upload-id", this._cosUploadId);
       var data = this.options.onCompletePostData || {};
+      if (this._parts.length > 0) {
+        data.parts = this._parts;
+      }
       xhr.send(JSON.stringify(data));
     }
   }]);
