@@ -365,7 +365,7 @@ var Upload = function () {
         var cosEtag = e.currentTarget.getResponseHeader('x-cos-part-etag');
         if (cosEtag) {
           _this2._parts.push({
-            PartNumber: nextId === '-1' ? _this2._parts.length + 1 : nextId,
+            PartNumber: nextId === -1 ? _this2._parts.length + 1 : nextId,
             ETag: cosEtag
           });
         }
