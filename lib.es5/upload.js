@@ -219,9 +219,9 @@ var Upload = function () {
 
         // 如果有cos返回的etag ，则存起来，等complete时用到
         var cosEtag = e.currentTarget.getResponseHeader('x-cos-part-etag');
-        if (cosEtag) {
+        if (cosEtag && nextId >= 0) {
           _this2._parts.push({
-            PartNumber: nextId, // COS的分片编号从1开始
+            PartNumber: nextId + 1, // COS的分片编号从1开始
             ETag: cosEtag
           });
         }
